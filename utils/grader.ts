@@ -22,27 +22,27 @@ export const calculateTeaGrade = (
     if (yenPerGram > 30) {
       grade = Grade.IMPERIAL; 
       reasoning = {
-        en: `¥${yenPerGram.toFixed(0)}/g. Competition grade. The pinnacle of Sencha.`,
-        jp: `g単価 ¥${yenPerGram.toFixed(0)}。品評会・競技会クラス。煎茶の頂点です。`,
-        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。品鉴/竞赛级。煎茶之巅峰，风味极致。`
+        en: `¥${yenPerGram.toFixed(0)}/g (> ¥30). Master/Competition Grade.`,
+        jp: `g単価 ¥${yenPerGram.toFixed(0)}。品鑑・競技会級（Master）。`,
+        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。品鉴/竞赛级。属于煎茶中的登峰造极之作。`
       };
     } 
     // Premium: 15 - 30 Yen/g
     else if (yenPerGram >= 15) {
       grade = Grade.HIGH; 
       reasoning = {
-        en: `¥${yenPerGram.toFixed(0)}/g. Premium grade ideal for serving guests.`,
-        jp: `g単価 ¥${yenPerGram.toFixed(0)}。来客用にも最適な上級煎茶です。`,
-        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。待客级高级煎茶。色香味俱佳。`
+        en: `¥${yenPerGram.toFixed(0)}/g (¥15-30). Premium Grade for guests.`,
+        jp: `g単価 ¥${yenPerGram.toFixed(0)}。待客級（Premium）。来客用に適した上級茶です。`,
+        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。待客级（Premium）。适合招待贵客的高级煎茶。`
       };
     } 
     // Standard: < 15 Yen/g
     else {
       grade = Grade.STANDARD;
       reasoning = {
-        en: `¥${yenPerGram.toFixed(0)}/g. Refreshing everyday Sencha.`,
-        jp: `g単価 ¥${yenPerGram.toFixed(0)}。日常的に楽しめる爽やかな煎茶です。`,
-        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。日常级煎茶。清爽宜人。`
+        en: `¥${yenPerGram.toFixed(0)}/g (< ¥15). Standard Grade for daily use.`,
+        jp: `g単価 ¥${yenPerGram.toFixed(0)}。日常級（Standard）。普段使いの煎茶です。`,
+        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。日常级（Standard）。适合每日饮用的清爽煎茶。`
       };
     }
   } else if (teaType === TeaType.GYOKURO) {
@@ -50,27 +50,27 @@ export const calculateTeaGrade = (
     if (yenPerGram >= 80) {
       grade = Grade.IMPERIAL;
       reasoning = {
-        en: `¥${yenPerGram.toFixed(0)}/g. Ultimate competition grade. Supports concentrated 'drop' brewing (≤40°C).`,
-        jp: `g単価 ¥${yenPerGram.toFixed(0)}。極上の出品茶クラス。低温（≤40℃）・少量の「雫出し」に耐えうる品質です。`,
-        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。极品滴露级。适合在 ≤40℃ 极其严苛的条件下进行滴露萃取。`
+        en: `¥${yenPerGram.toFixed(0)}/g (≥ ¥80). Competition/Drop-Brew Grade.`,
+        jp: `g単価 ¥${yenPerGram.toFixed(0)}。極品・滴露成立級（Master）。40℃以下の少水量で真価を発揮します。`,
+        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。极品/滴露成立级。需在 ≤40℃、极少水量条件下成立。`
       };
     } 
-    // Premium: 45 - 80 Yen/g
+    // Premium: 45 - 80 Yen/g (Exclusive of 80)
     else if (yenPerGram >= 45) {
       grade = Grade.HIGH;
       reasoning = {
-        en: `¥${yenPerGram.toFixed(0)}/g. Authentic high-grade Gyokuro. Rich umami and distinct aroma.`,
-        jp: `g単価 ¥${yenPerGram.toFixed(0)}。正統派の高級玉露。濃厚な旨味と覆い香が楽しめます。`,
-        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。正统高级玉露。覆盖香浓郁，鲜味醇厚。`
+        en: `¥${yenPerGram.toFixed(0)}/g (¥45-80). Premium Grade.`,
+        jp: `g単価 ¥${yenPerGram.toFixed(0)}。正統高級（Premium）。本格的な玉露の旨味。`,
+        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。正统高级（Premium）。风味纯正的高级玉露。`
       };
     } 
-    // Entry/Practice: < 45 Yen/g (Specifically 30-45 is practice, but <30 is also standard)
+    // Entry/Practice: < 45 Yen/g (Typically 30-45, but covers anything below 45)
     else {
       grade = Grade.STANDARD; 
       reasoning = {
-        en: `¥${yenPerGram.toFixed(0)}/g. Entry level Gyokuro. Good for practice and daily appreciation.`,
-        jp: `g単価 ¥${yenPerGram.toFixed(0)}。玉露の練習用・入門用に適した等級です。`,
-        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。玉露练习级。适合作为入门体验或日常练习。`
+        en: `¥${yenPerGram.toFixed(0)}/g (< ¥45). Entry/Practice Grade.`,
+        jp: `g単価 ¥${yenPerGram.toFixed(0)}。練習級（Entry）。玉露の淹れ方の練習に最適です。`,
+        cn: `单价 ¥${yenPerGram.toFixed(0)}/g。练习级（Entry）。适合作为玉露入门或冲泡练习。`
       };
     }
   }

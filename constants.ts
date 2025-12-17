@@ -224,14 +224,14 @@ export const TEA_DATA: Record<TeaType, TeaDefinition> = {
       [Grade.IMPERIAL]: {
         grade: Grade.IMPERIAL,
         description: {
-          en: 'Competition grade. A few drops of concentrated nectar from the heavens.',
-          jp: '出品茶クラス。天からの一滴のような、凝縮された甘露。',
-          cn: '赛级玉露。犹如天赐甘露，滴滴浓缩精华。'
+          en: 'Competition grade. Concentrated nectar extracted drop by drop.',
+          jp: '出品茶・滴露成立級。極限まで凝縮された甘露を、一滴ずつ。',
+          cn: '赛级/滴露成立级。犹如天赐甘露，在极少水量中滴滴浓缩精华。'
         },
         parameters: {
           waterTemperature: 40,
           leafAmount: 8, // Very high leaf ratio
-          waterAmount: 40 // Very low water ratio
+          waterAmount: 30 // Reduced to 30ml to match strict "Drop" brewing conditions (20-30ml)
         },
         steeps: [
           { 
