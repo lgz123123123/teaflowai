@@ -283,19 +283,5 @@ export const TEA_DATA: Record<TeaType, TeaDefinition> = {
         ]
       }
     }
-  },
-  [TeaType.AI_MASTER]: {
-    id: 'ai-master',
-    name: {
-      en: 'AI Tea Master',
-      jp: 'AI 茶師',
-      cn: 'AI 茶艺师'
-    },
-    tagline: {
-      en: 'Custom brewing for any tea',
-      jp: 'あらゆるお茶に、最適な一煎を',
-      cn: '为您定制专属冲泡方案'
-    },
-    profiles: {}
   }
 };

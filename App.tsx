@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Leaf, Droplets, Thermometer, ArrowRight, RotateCcw, Globe, Sparkles, Plus, Minus, Lock, Unlock, RefreshCw, ChevronLeft, Clock, Calculator, Bot } from 'lucide-react';
+import { Leaf, Droplets, Thermometer, ArrowRight, RotateCcw, Globe, Sparkles, Plus, Minus, Lock, Unlock, RefreshCw, ChevronLeft, Clock, Calculator } from 'lucide-react';
 
 import { TEA_DATA } from './constants';
 import { UI_TRANSLATIONS } from './i18n';
-import { TeaType, Grade, TeaGradeProfile, Language, Steep, AIBrewingPlan } from './types';
+import { TeaType, Grade, TeaGradeProfile, Language, Steep } from './types';
 import { Background } from './components/Background';
 import { TeaCard } from './components/TeaCard';
 import { Button } from './components/Button';
 import { Timer } from './components/Timer';
 import { TeaGrader } from './components/TeaGrader';
-import { AIBrewModal } from './components/AIBrewModal'; // Imported
 import { playGentleBell, playSoftClick, playConfirmSound } from './utils/audio';
 
 type AppStage = 'tea-select' | 'grade-select' | 'prep' | 'brewing' | 'finish';
@@ -48,7 +47,7 @@ const itemVariants: Variants = {
 
 interface OrganicIconProps {
   variant: 'standard' | 'high' | 'imperial';
-  teaType?: TeaType; // Added teaType to distinguish styles
+  teaType?: TeaType;
   className?: string;
 }
 
@@ -318,41 +317,14 @@ export default function App() {
   const [lang, setLang] = useState<Language>('en');
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isGraderOpen, setIsGraderOpen] = useState(false);
-  const [isAIBrewOpen, setIsAIBrewOpen] = useState(false); // New AI Modal State
 
   // Brewing Configuration State
   const [brewConfig, setBrewConfig] = useState<BrewConfig | null>(null);
   const [isRatioLocked, setIsRatioLocked] = useState(true);
-  
-  // AI Custom Plan State
-  const [aiCustomPlan, setAiCustomPlan] = useState<AIBrewingPlan | null>(null);
 
   // Derived state
-  const teaData = (selectedTea && selectedTea !== TeaType.AI_MASTER) ? TEA_DATA[selectedTea] : null;
-  
-  // Handle Grade Profile for Standard Teas OR AI
-  let gradeProfile: TeaGradeProfile | null = null;
-  
-  if (selectedTea === TeaType.AI_MASTER && aiCustomPlan) {
-    // Construct a TeaGradeProfile from AI Plan
-    gradeProfile = {
-      grade: Grade.AI_CUSTOM,
-      description: { en: aiCustomPlan.description, jp: aiCustomPlan.description, cn: aiCustomPlan.description },
-      parameters: {
-        leafAmount: aiCustomPlan.parameters.leaf_amount,
-        waterAmount: aiCustomPlan.parameters.water_amount,
-        waterTemperature: aiCustomPlan.parameters.water_temperature
-      },
-      steeps: aiCustomPlan.steeps.map(s => ({
-        duration: s.duration,
-        temperature: aiCustomPlan.parameters.water_temperature, // Base temp if not specified per steep
-        note: { en: s.note, jp: s.note, cn: s.note }
-      }))
-    };
-  } else if (teaData && selectedGrade) {
-    gradeProfile = teaData.profiles[selectedGrade] || null;
-  }
-
+  const teaData = selectedTea ? TEA_DATA[selectedTea] : null;
+  const gradeProfile = (teaData && selectedGrade) ? teaData.profiles[selectedGrade] || null : null;
   const currentSteep = brewConfig ? brewConfig.steeps[steepIndex] : null;
   
   const t = (key: keyof typeof UI_TRANSLATIONS) => UI_TRANSLATIONS[key][lang];
@@ -361,7 +333,7 @@ export default function App() {
   const trackingSubtitle = lang === 'en' ? 'tracking-widest' : 'tracking-widest';
   const trackingBody = lang === 'en' ? 'tracking-wide' : 'tracking-normal';
 
-  // Helper for dynamic steep labels (e.g. "Brew Steep 2", "2煎目を淹れる", "冲泡第2煎")
+  // Helper for dynamic steep labels
   const getSteepActionLabel = (index: number) => {
     const n = index + 1;
     switch(lang) {
@@ -373,24 +345,7 @@ export default function App() {
 
   // Logic to get initial config from a grade (helper)
   const getInitialConfig = (tea: TeaType, grade: Grade): BrewConfig => {
-    // If AI, we shouldn't call this directly without the plan, 
-    // but safe to guard
-    if (tea === TeaType.AI_MASTER && aiCustomPlan) {
-      return {
-        waterTemperature: aiCustomPlan.parameters.water_temperature,
-        leafAmount: aiCustomPlan.parameters.leaf_amount,
-        waterAmount: aiCustomPlan.parameters.water_amount,
-        steeps: aiCustomPlan.steeps.map(s => ({
-            duration: s.duration,
-            temperature: aiCustomPlan.parameters.water_temperature,
-            note: { en: s.note, jp: s.note, cn: s.note },
-            flavor: { en: '', jp: '', cn: '' }
-        }))
-      };
-    }
-
-    // Standard path
-    const profile = TEA_DATA[tea].profiles[grade];
+    const profile = TEA_DATA[tea].profiles[grade]!;
     return {
       waterTemperature: profile.parameters.waterTemperature,
       leafAmount: profile.parameters.leafAmount,
@@ -423,46 +378,16 @@ export default function App() {
   // Handlers
   const handleTeaSelect = (type: TeaType) => {
     playConfirmSound();
-    if (type === TeaType.AI_MASTER) {
-      setIsAIBrewOpen(true);
-      // Don't set selectedTea yet, wait for plan
-    } else {
-      setSelectedTea(type);
-      setStage('grade-select');
-    }
-  };
-
-  const handleAIPlanGenerated = (plan: AIBrewingPlan) => {
-    setIsAIBrewOpen(false);
-    setAiCustomPlan(plan);
-    setSelectedTea(TeaType.AI_MASTER);
-    
-    // Create config directly
-    const config = {
-      waterTemperature: plan.parameters.water_temperature,
-      leafAmount: plan.parameters.leaf_amount,
-      waterAmount: plan.parameters.water_amount,
-      steeps: plan.steeps.map(s => ({
-        duration: s.duration,
-        temperature: plan.parameters.water_temperature,
-        note: { en: s.note, jp: s.note, cn: s.note },
-        flavor: undefined
-      }))
-    };
-    
-    setBrewConfig(config);
-    setSelectedGrade(Grade.AI_CUSTOM);
-    setSteepIndex(0);
-    setIsRatioLocked(true); // Default lock for AI
-    setStage('prep'); // Skip grade select
+    setSelectedTea(type);
+    setStage('grade-select');
   };
 
   const handleGradeSelect = (grade: Grade) => {
     playConfirmSound();
     setSelectedGrade(grade);
     
-    // Initialize config immediately to avoid flash and race conditions
-    if (selectedTea && selectedTea !== TeaType.AI_MASTER) {
+    // Initialize config immediately
+    if (selectedTea) {
        const initialConfig = getInitialConfig(selectedTea, grade);
        setBrewConfig(initialConfig);
        setIsRatioLocked(true);
@@ -509,7 +434,6 @@ export default function App() {
     setStage('tea-select');
     setSelectedTea(null);
     setSelectedGrade(null);
-    setAiCustomPlan(null); // Clear AI plan
     setSteepIndex(0);
     setIsTimerActive(false);
     setEndTime(null);
@@ -532,13 +456,8 @@ export default function App() {
         setSelectedTea(null);
         break;
       case 'prep':
-        if (selectedTea === TeaType.AI_MASTER) {
-           // Go back to selection from AI prep, clearing data
-           resetFlow();
-        } else {
-           setStage('grade-select');
-           setSelectedGrade(null);
-        }
+        setStage('grade-select');
+        setSelectedGrade(null);
         break;
       case 'brewing':
         setIsTimerActive(false);
@@ -556,22 +475,15 @@ export default function App() {
   const resetParams = () => {
     playSoftClick();
     if (selectedTea && selectedGrade) {
-       // If AI, restore from original AI plan
-       if (selectedTea === TeaType.AI_MASTER && aiCustomPlan) {
-          handleAIPlanGenerated(aiCustomPlan);
-       } else {
-          const initialConfig = getInitialConfig(selectedTea, selectedGrade);
-          setBrewConfig(initialConfig);
-          setIsRatioLocked(true);
-       }
+      const initialConfig = getInitialConfig(selectedTea, selectedGrade);
+      setBrewConfig(initialConfig);
+      setIsRatioLocked(true);
     }
   };
 
   const adjustWater = (delta: number) => {
     if (!brewConfig) return;
     
-    // For AI or standard, logic is similar if we have params
-    // Use current params as base if gradeProfile is complex to reconstruct
     const currentRatio = (gradeProfile?.parameters.leafAmount || 0) / (gradeProfile?.parameters.waterAmount || 1);
     
     const newWater = Math.max(10, brewConfig.waterAmount + delta);
@@ -608,7 +520,7 @@ export default function App() {
       temperature: newTemp 
     };
     
-    // Also update base water temp if we are on steep 0, just for consistency
+    // Also update base water temp if we are on steep 0
     const newBaseTemp = steepIndex === 0 ? newTemp : brewConfig.waterTemperature;
 
     setBrewConfig({ ...brewConfig, waterTemperature: newBaseTemp, steeps: newSteeps });
@@ -649,16 +561,6 @@ export default function App() {
             subtitle={TEA_DATA[TeaType.GYOKURO].tagline[lang]}
             icon={<Droplets size={32} strokeWidth={1.5} />}
             onClick={() => handleTeaSelect(TeaType.GYOKURO)} 
-          />
-        </motion.div>
-        {/* NEW AI CARD */}
-        <motion.div variants={itemVariants}>
-          <TeaCard 
-            name={lang === 'en' ? "Tea Master AI" : lang === 'jp' ? "AI 茶師" : "AI 茶艺师"}
-            subtitle={lang === 'en' ? "Custom brewing for any tea" : lang === 'jp' ? "あらゆるお茶に、最適な一煎を" : "为您定制专属冲泡方案"}
-            icon={<Sparkles size={32} strokeWidth={1.5} className="text-champagne" />}
-            onClick={() => handleTeaSelect(TeaType.AI_MASTER)}
-            selected={false} // never selected state in list
           />
         </motion.div>
       </motion.div>
@@ -764,11 +666,6 @@ export default function App() {
   const renderPreparation = () => {
     if (!brewConfig) return null;
 
-    // Helper to extract string from Description (Record or string)
-    const descText = typeof gradeProfile?.description === 'string' 
-      ? gradeProfile.description 
-      : gradeProfile?.description[lang];
-
     return (
       <motion.div 
         key="prep"
@@ -777,12 +674,11 @@ export default function App() {
         className="w-full max-w-md space-y-8 text-center"
       >
         <div className="space-y-2">
-          {/* Use AI Tea Type name if custom */}
           <h2 className="font-serif text-2xl text-moss leading-relaxed">
-            {selectedTea === TeaType.AI_MASTER ? aiCustomPlan?.tea_type : t('preparation')}
+            {t('preparation')}
           </h2>
           <p className={`font-sans text-xs text-sage uppercase ${trackingSubtitle}`}>
-            {selectedTea === TeaType.AI_MASTER ? "AI Master Recipe" : t('foundation')}
+            {t('foundation')}
           </p>
         </div>
 
@@ -839,7 +735,7 @@ export default function App() {
         </div>
 
         <p className="font-serif italic text-stone/80 text-sm leading-relaxed px-4 min-h-[3em]">
-          "{descText}"
+          "{gradeProfile?.description[lang]}"
         </p>
 
         <div className="flex flex-col gap-3 pt-2">
@@ -879,18 +775,6 @@ export default function App() {
       ? brewConfig.steeps[steepIndex + 1] 
       : null;
       
-    // Helper for AI notes which are strings, vs standard which are Records
-    const getNote = (steep: Steep) => {
-      if (typeof steep.note === 'string') return steep.note;
-      return steep.note[lang];
-    };
-    
-    const getFlavor = (steep: Steep) => {
-        if (!steep.flavor) return null;
-        if (typeof steep.flavor === 'string') return steep.flavor;
-        return steep.flavor[lang];
-    };
-    
     return (
       <motion.div 
         key="brewing"
@@ -928,9 +812,9 @@ export default function App() {
                 className="flex flex-col gap-4 text-center px-4"
               >
                 <p className="text-stone font-serif italic text-lg leading-relaxed">
-                  {currentSteep ? getNote(currentSteep) : ''}
+                  {currentSteep ? currentSteep.note[lang] : ''}
                 </p>
-                {currentSteep && getFlavor(currentSteep) && (
+                {currentSteep && currentSteep.flavor && currentSteep.flavor[lang] && (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -941,7 +825,7 @@ export default function App() {
                       <span className="text-xs font-sans uppercase tracking-widest leading-none pt-[1px]">{t('tastingNote')}</span>
                     </div>
                     <p className="text-moss font-serif text-sm leading-relaxed">
-                      {getFlavor(currentSteep)}
+                      {currentSteep.flavor[lang]}
                     </p>
                   </motion.div>
                 )}
@@ -1046,13 +930,6 @@ export default function App() {
         teaType={selectedTea || TeaType.SENCHA}
         lang={lang}
         onApply={handleApplyGrade}
-      />
-
-      {/* AI Brew Modal */}
-      <AIBrewModal 
-        isOpen={isAIBrewOpen}
-        onClose={() => setIsAIBrewOpen(false)}
-        onPlanGenerated={handleAIPlanGenerated}
       />
 
       <AnimatePresence mode="wait">

@@ -55,6 +55,7 @@ export const getApiKey = (provider: 'zhipu' | 'gemini'): string | null => {
     return (import.meta as any).env?.VITE_ZHIPU_API_KEY || null;
   }
   if (provider === 'gemini') {
+    // Prefer process.env.API_KEY if available (standard in some envs), else VITE specific
     return process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY || null;
   }
   
@@ -155,8 +156,7 @@ export const fetchBrewingPlan = async (
 
     } catch (error) {
       console.error("Failed to fetch from ZhipuAI:", error);
-      // Fallback to mock if API fails
-      return MOCK_PLAN;
+      // Continue to Fallback
     }
   }
 
@@ -165,7 +165,7 @@ export const fetchBrewingPlan = async (
   
   if (geminiKey) {
      // Dynamic import to avoid loading Google SDK if not needed
-     const { GoogleGenAI } = await import('@google/genai');
+     const { GoogleGenAI, Type } = await import('@google/genai');
      
      const ai = new GoogleGenAI({ apiKey: geminiKey });
      try {
@@ -175,7 +175,35 @@ export const fetchBrewingPlan = async (
         config: {
           systemInstruction: SYSTEM_PROMPT,
           responseMimeType: 'application/json',
-           // Gemini Schema... (omitted for brevity)
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              tea_type: { type: Type.STRING },
+              grade: { type: Type.STRING },
+              description: { type: Type.STRING },
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  water_temperature: { type: Type.NUMBER },
+                  leaf_amount: { type: Type.NUMBER },
+                  water_amount: { type: Type.NUMBER },
+                },
+                required: ['water_temperature', 'leaf_amount', 'water_amount']
+              },
+              steeps: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    duration: { type: Type.NUMBER },
+                    note: { type: Type.STRING }
+                  },
+                  required: ['duration', 'note']
+                }
+              }
+            },
+            required: ['tea_type', 'grade', 'description', 'parameters', 'steeps']
+          }
         }
       });
       if (response.text) return JSON.parse(response.text) as AIBrewingPlan;
