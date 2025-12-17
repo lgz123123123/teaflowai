@@ -9,7 +9,7 @@ import { Background } from './components/Background';
 import { TeaCard } from './components/TeaCard';
 import { Button } from './components/Button';
 import { Timer } from './components/Timer';
-import { TeaGrader } from './components/TeaGrader';
+import { TeaGrader } from './components/TeaGrader'; // Imported
 import { playGentleBell, playSoftClick, playConfirmSound } from './utils/audio';
 
 type AppStage = 'tea-select' | 'grade-select' | 'prep' | 'brewing' | 'finish';
@@ -47,7 +47,7 @@ const itemVariants: Variants = {
 
 interface OrganicIconProps {
   variant: 'standard' | 'high' | 'imperial';
-  teaType?: TeaType;
+  teaType?: TeaType; // Added teaType to distinguish styles
   className?: string;
 }
 
@@ -316,7 +316,7 @@ export default function App() {
   // Settings
   const [lang, setLang] = useState<Language>('en');
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const [isGraderOpen, setIsGraderOpen] = useState(false);
+  const [isGraderOpen, setIsGraderOpen] = useState(false); // New state for modal
 
   // Brewing Configuration State
   const [brewConfig, setBrewConfig] = useState<BrewConfig | null>(null);
@@ -324,7 +324,9 @@ export default function App() {
 
   // Derived state
   const teaData = selectedTea ? TEA_DATA[selectedTea] : null;
-  const gradeProfile = (teaData && selectedGrade) ? teaData.profiles[selectedGrade] || null : null;
+  const gradeProfile: TeaGradeProfile | null = (teaData && selectedGrade) 
+    ? teaData.profiles[selectedGrade] 
+    : null;
   const currentSteep = brewConfig ? brewConfig.steeps[steepIndex] : null;
   
   const t = (key: keyof typeof UI_TRANSLATIONS) => UI_TRANSLATIONS[key][lang];
@@ -333,7 +335,7 @@ export default function App() {
   const trackingSubtitle = lang === 'en' ? 'tracking-widest' : 'tracking-widest';
   const trackingBody = lang === 'en' ? 'tracking-wide' : 'tracking-normal';
 
-  // Helper for dynamic steep labels
+  // Helper for dynamic steep labels (e.g. "Brew Steep 2", "2煎目を淹れる", "冲泡第2煎")
   const getSteepActionLabel = (index: number) => {
     const n = index + 1;
     switch(lang) {
@@ -345,7 +347,7 @@ export default function App() {
 
   // Logic to get initial config from a grade (helper)
   const getInitialConfig = (tea: TeaType, grade: Grade): BrewConfig => {
-    const profile = TEA_DATA[tea].profiles[grade]!;
+    const profile = TEA_DATA[tea].profiles[grade];
     return {
       waterTemperature: profile.parameters.waterTemperature,
       leafAmount: profile.parameters.leafAmount,
@@ -386,7 +388,7 @@ export default function App() {
     playConfirmSound();
     setSelectedGrade(grade);
     
-    // Initialize config immediately
+    // Initialize config immediately to avoid flash and race conditions
     if (selectedTea) {
        const initialConfig = getInitialConfig(selectedTea, grade);
        setBrewConfig(initialConfig);
@@ -482,29 +484,25 @@ export default function App() {
   };
 
   const adjustWater = (delta: number) => {
-    if (!brewConfig) return;
-    
-    const currentRatio = (gradeProfile?.parameters.leafAmount || 0) / (gradeProfile?.parameters.waterAmount || 1);
-    
+    if (!brewConfig || !gradeProfile) return;
     const newWater = Math.max(10, brewConfig.waterAmount + delta);
     let newLeaf = brewConfig.leafAmount;
 
-    if (isRatioLocked && currentRatio > 0) {
-      newLeaf = Number((newWater * currentRatio).toFixed(1));
+    if (isRatioLocked) {
+      const ratio = gradeProfile.parameters.leafAmount / gradeProfile.parameters.waterAmount;
+      newLeaf = Number((newWater * ratio).toFixed(1));
     }
     setBrewConfig({ ...brewConfig, waterAmount: newWater, leafAmount: newLeaf });
   };
 
   const adjustLeaf = (delta: number) => {
-    if (!brewConfig) return;
-    
-    const currentRatio = (gradeProfile?.parameters.leafAmount || 0) / (gradeProfile?.parameters.waterAmount || 1);
-    
+    if (!brewConfig || !gradeProfile) return;
     const newLeaf = Math.max(0.5, Number((brewConfig.leafAmount + delta).toFixed(1)));
     let newWater = brewConfig.waterAmount;
 
-    if (isRatioLocked && currentRatio > 0) {
-      newWater = Math.round(newLeaf / currentRatio);
+    if (isRatioLocked) {
+      const ratio = gradeProfile.parameters.leafAmount / gradeProfile.parameters.waterAmount;
+      newWater = Math.round(newLeaf / ratio);
     }
     setBrewConfig({ ...brewConfig, leafAmount: newLeaf, waterAmount: newWater });
   };
@@ -520,7 +518,7 @@ export default function App() {
       temperature: newTemp 
     };
     
-    // Also update base water temp if we are on steep 0
+    // Also update base water temp if we are on steep 0, just for consistency
     const newBaseTemp = steepIndex === 0 ? newTemp : brewConfig.waterTemperature;
 
     setBrewConfig({ ...brewConfig, waterTemperature: newBaseTemp, steeps: newSteeps });
@@ -674,12 +672,8 @@ export default function App() {
         className="w-full max-w-md space-y-8 text-center"
       >
         <div className="space-y-2">
-          <h2 className="font-serif text-2xl text-moss leading-relaxed">
-            {t('preparation')}
-          </h2>
-          <p className={`font-sans text-xs text-sage uppercase ${trackingSubtitle}`}>
-            {t('foundation')}
-          </p>
+          <h2 className="font-serif text-2xl text-moss leading-relaxed">{t('preparation')}</h2>
+          <p className={`font-sans text-xs text-sage uppercase ${trackingSubtitle}`}>{t('foundation')}</p>
         </div>
 
         {/* Dynamic Parameters Grid */}
@@ -774,7 +768,7 @@ export default function App() {
     const nextSteepConfig = brewConfig && steepIndex < (brewConfig.steeps.length - 1) 
       ? brewConfig.steeps[steepIndex + 1] 
       : null;
-      
+    
     return (
       <motion.div 
         key="brewing"
@@ -812,9 +806,9 @@ export default function App() {
                 className="flex flex-col gap-4 text-center px-4"
               >
                 <p className="text-stone font-serif italic text-lg leading-relaxed">
-                  {currentSteep ? currentSteep.note[lang] : ''}
+                  {currentSteep?.note[lang]}
                 </p>
-                {currentSteep && currentSteep.flavor && currentSteep.flavor[lang] && (
+                {currentSteep?.flavor && (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -825,7 +819,7 @@ export default function App() {
                       <span className="text-xs font-sans uppercase tracking-widest leading-none pt-[1px]">{t('tastingNote')}</span>
                     </div>
                     <p className="text-moss font-serif text-sm leading-relaxed">
-                      {currentSteep.flavor[lang]}
+                      {currentSteep?.flavor[lang]}
                     </p>
                   </motion.div>
                 )}

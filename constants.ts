@@ -156,7 +156,7 @@ export const TEA_DATA: Record<TeaType, TeaDefinition> = {
             note: {
               en: 'Rising intensity.',
               jp: '高まる強度。',
-              cn: '強度递增。'
+              cn: '强度递增。'
             }
           },
           { 
@@ -216,7 +216,7 @@ export const TEA_DATA: Record<TeaType, TeaDefinition> = {
           waterAmount: 60
         },
         steeps: [
-          { duration: 120, temperature: 55, note: { en: 'Patience reveals the creaminess.', jp: '忍耐がクリーミーさを生む。', cn: '耐心唤醒顺滑口感。' }, flavor: { en: 'Brothy and rich.', jp: '出汁のような濃厚さ。', cn: '汤感濃厚。' } },
+          { duration: 120, temperature: 55, note: { en: 'Patience reveals the creaminess.', jp: '忍耐がクリーミーさを生む。', cn: '耐心唤醒顺滑口感。' }, flavor: { en: 'Brothy and rich.', jp: '出汁のような濃厚さ。', cn: '汤感浓厚。' } },
           { duration: 30, temperature: 65, note: { en: 'Warm up slightly.', jp: '少し温める。', cn: '稍稍升温。' } },
           { duration: 90, temperature: 85, note: { en: 'Extract the herbal notes.', jp: '茶葉の香草感を引き出す。', cn: '萃取草本香气。' } }
         ]
@@ -277,7 +277,7 @@ export const TEA_DATA: Record<TeaType, TeaDefinition> = {
             note: {
               en: 'The final wash. Refreshing bitterness.',
               jp: '最後の洗い。爽やかな苦み。',
-              cn: '最後の洗礼，清爽的苦韵。'
+              cn: '最后的洗礼，清爽的苦韵。'
             }
           }
         ]

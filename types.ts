@@ -13,7 +13,7 @@ export enum Grade {
 
 export interface Steep {
   duration: number; // in seconds
-  temperature: number; // Celsius
+  temperature: number; // Celsius (New field for Master brewing)
   note: Record<Language, string>;
   flavor?: Record<Language, string>;
 }
@@ -36,25 +36,6 @@ export interface TeaDefinition {
   name: Record<Language, string>;
   tagline: Record<Language, string>;
   profiles: {
-    [key in Grade]?: TeaGradeProfile;
+    [key in Grade]: TeaGradeProfile;
   };
-}
-
-export interface AIBrewingSteep {
-  duration: number;
-  note: string;
-}
-
-export interface AIBrewingParameters {
-  water_temperature: number;
-  leaf_amount: number;
-  water_amount: number;
-}
-
-export interface AIBrewingPlan {
-  tea_type: string;
-  grade: string;
-  description: string;
-  parameters: AIBrewingParameters;
-  steeps: AIBrewingSteep[];
 }
